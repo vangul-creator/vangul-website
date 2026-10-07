@@ -5,12 +5,14 @@ const path = require("path");
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const ARTIST_ID = "2sb1b7hozpaPl6oI6ShR0u";
 
-app.use(express.static(__dirname));
+// Static files
+app.use(express.static(path.join(__dirname, "public")));
 
+// Spotify access token
 async function getSpotifyToken() {
     const credentials = Buffer
         .from(
@@ -32,6 +34,7 @@ async function getSpotifyToken() {
 
     if (!response.ok) {
         const errorText = await response.text();
+
         throw new Error(
             `Spotify token error: ${response.status} ${errorText}`
         );
@@ -40,11 +43,9 @@ async function getSpotifyToken() {
     return response.json();
 }
 
-
+// Latest Spotify release
 app.get("/api/releases", async (req, res) => {
-
     try {
-
         const tokenData = await getSpotifyToken();
 
         const response = await fetch(
@@ -72,38 +73,27 @@ app.get("/api/releases", async (req, res) => {
             });
         }
 
-
-        // Remove duplicate Spotify entries
+        // Remove duplicates
         const uniqueReleases = [];
-
         const seen = new Set();
 
         for (const release of data.items) {
-
             if (!seen.has(release.id)) {
-
                 seen.add(release.id);
-
                 uniqueReleases.push(release);
-
             }
-
         }
 
-
-        // Sort newest first
+        // Newest first
         uniqueReleases.sort(
             (a, b) =>
                 new Date(b.release_date) -
                 new Date(a.release_date)
         );
 
-
         const latest = uniqueReleases[0];
 
-
         res.json({
-
             name: latest.name,
 
             image:
@@ -128,28 +118,25 @@ app.get("/api/releases", async (req, res) => {
                 latest.external_urls.spotify
                     ? latest.external_urls.spotify
                     : null
-
         });
 
-    }
-
-    catch (error) {
-
+    } catch (error) {
         console.error(error);
 
         res.status(500).json({
             error: "Could not load Spotify release"
         });
-
     }
-
 });
 
+// Local development only
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(
+            `VANGUL website running at http://localhost:${PORT}`
+        );
+    });
+}
 
-app.listen(PORT, () => {
-
-    console.log(
-        `VANGUL website running at http://localhost:${PORT}`
-    );
-
-});
+// Vercel
+module.exports = app;
