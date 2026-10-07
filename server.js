@@ -8,7 +8,6 @@ const app = express();
 
 const ARTIST_ID = "2sb1b7hozpaPl6oI6ShR0u";
 
-
 // =========================
 // WEBSITE
 // =========================
@@ -16,6 +15,13 @@ const ARTIST_ID = "2sb1b7hozpaPl6oI6ShR0u";
 app.use(
     express.static(
         path.join(__dirname, "public")
+    )
+);
+
+app.use(
+    "/images",
+    express.static(
+        path.join(__dirname, "public", "images")
     )
 );
 
